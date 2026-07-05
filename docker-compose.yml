@@ -1,34 +1,18 @@
-version: "3.9"
-
 services:
-  db:
-    image: postgres:16
-    container_name: image-metadata-db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: image_metadata_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
   api:
     build: .
     container_name: image-metadata-api
     restart: always
-    depends_on:
-      - db
+
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/image_metadata_db
-      JWT_SECRET_KEY: change-this-to-a-long-random-string
-      JWT_ALGORITHM: HS256
-      JWT_EXPIRE_MINUTES: 60
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+
     ports:
       - "8000:8000"
-    volumes:
-      - ./uploads:/app/uploads
-
-volumes:
-  pgdata:

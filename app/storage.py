@@ -1,25 +1,30 @@
-import os
 import uuid
+import boto3
 from fastapi import UploadFile
 
-UPLOAD_DIR = "uploads"
+from app.config import settings
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+s3_client = boto3.client(
+    "s3",
+    region_name=settings.aws_region,
+    aws_access_key_id=settings.aws_access_key_id,
+    aws_secret_access_key=settings.aws_secret_access_key,
+)
 
 
 def save_file_locally(file: UploadFile) -> str:
-    """Saves the uploaded file to disk with a unique filename and returns that filename."""
-    extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4().hex}{extension}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    """Uploads the file to S3 and returns the S3 object key (used as 'filename')."""
+    extension = file.filename.split(".")[-1] if "." in file.filename else ""
+    unique_filename = f"{uuid.uuid4().hex}.{extension}" if extension else uuid.uuid4().hex
 
-    with open(file_path, "wb") as buffer:
-        buffer.write(file.file.read())
-
+    s3_client.upload_fileobj(
+        file.file,
+        settings.s3_bucket_name,
+        unique_filename,
+        ExtraArgs={"ContentType": file.content_type},
+    )
     return unique_filename
 
 
 def delete_file_locally(filename: str) -> None:
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    s3_client.delete_object(Bucket=settings.s3_bucket_name, Key=filename)
