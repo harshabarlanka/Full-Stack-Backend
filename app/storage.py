@@ -4,12 +4,17 @@ from fastapi import UploadFile
 
 from app.config import settings
 
-s3_client = boto3.client(
-    "s3",
-    region_name=settings.aws_region,
-    aws_access_key_id=settings.aws_access_key_id,
-    aws_secret_access_key=settings.aws_secret_access_key,
-)
+if settings.aws_access_key_id and settings.aws_secret_access_key:
+    # Local dev: explicit keys from .env
+    s3_client = boto3.client(
+        "s3",
+        region_name=settings.aws_region,
+        aws_access_key_id=settings.aws_access_key_id,
+        aws_secret_access_key=settings.aws_secret_access_key,
+    )
+else:
+    # EC2: no keys provided, boto3 uses the attached IAM Role automatically
+    s3_client = boto3.client("s3", region_name=settings.aws_region)
 
 
 def save_file_locally(file: UploadFile) -> str:
