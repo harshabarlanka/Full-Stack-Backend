@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  test-db:
+    image: postgres:16
+    container_name: image-metadata-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: image_metadata_test_db
+    ports:
+      - "5433:5432"
