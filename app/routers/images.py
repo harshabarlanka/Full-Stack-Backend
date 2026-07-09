@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -6,6 +8,7 @@ from app.dependencies import get_db, get_current_user
 from app.storage import save_file_locally, delete_file_locally
 
 router = APIRouter(prefix="/images", tags=["images"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/upload", response_model=schemas.ImageOut, status_code=status.HTTP_201_CREATED)
@@ -27,6 +30,7 @@ def upload_image(
     db.add(new_image)
     db.commit()
     db.refresh(new_image)
+    logger.info(f"Image uploaded: id={new_image.id}, user_id={current_user.id}, filename={saved_filename}")
     return new_image
 
 
@@ -55,8 +59,10 @@ def delete_image(
         .first()
     )
     if image is None:
+        logger.warning(f"Delete attempted on nonexistent/unowned image: id={image_id}, user_id={current_user.id}")
         raise HTTPException(status_code=404, detail="Image not found")
 
     delete_file_locally(image.filename)
     db.delete(image)
     db.commit()
+    logger.info(f"Image deleted: id={image_id}, user_id={current_user.id}")
